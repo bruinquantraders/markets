@@ -1,0 +1,12 @@
+{
+  "name": "bqt-markets",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "setup": "node scripts/setup-and-migrate.mjs"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "^2.49.1",
+    "pg": "^8.13.3"
+  }
+}

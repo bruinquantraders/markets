@@ -1,12 +1,10 @@
 /* ============================================================
    BQT Markets — Colonel Blotto
    ------------------------------------------------------------
-   CONFIG: paste your deployed Google Apps Script Web App URL
-   below to switch from local mode to the shared leaderboard.
-   Leave it as "" to run fully local (with a few bot strategies).
+   Supabase credentials live in assets/js/config.js (from .env.local).
+   Leave config empty to run fully local (with a few bot strategies).
    ============================================================ */
 const CONFIG = {
-  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyYzG1IdB6PAGm6H_3o_XxO1zh8vcnT4iTG_dsGLDU86G_map5yWe4svV9dqNztNjMdeA/exec",
   SLOTS: 10,
   TROOPS: 100,
 };
@@ -26,26 +24,49 @@ const BOTS = [
 ];
 
 /* ============================================================
-   DATA LAYER  (pluggable: live Apps Script  OR  localStorage)
+   DATA LAYER  (Supabase when configured, else localStorage)
    ============================================================ */
-const isLive = () => !!CONFIG.APPS_SCRIPT_URL;
+const supabaseCfg = () => (typeof window !== "undefined" && window.SUPABASE_CONFIG) || null;
+const isLive = () => !!(supabaseCfg()?.url && supabaseCfg()?.key);
+
+let _db = null;
+function db() {
+  if (_db) return _db;
+  const cfg = supabaseCfg();
+  if (!cfg?.url || !cfg?.key) return null;
+  const lib = window.supabase;
+  if (!lib?.createClient) throw new Error("Supabase client failed to load");
+  _db = lib.createClient(cfg.url, cfg.key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  return _db;
+}
 
 const Data = {
   /* Return array of { username, strategy:[...] } for all players. */
   async all() {
     if (isLive()) {
-      const res = await fetch(CONFIG.APPS_SCRIPT_URL);
-      if (!res.ok) throw new Error(`read failed (${res.status})`);
-      const data = await res.json();
-      return (data.players || []).map(normalizePlayer).filter(Boolean);
+      const { data, error } = await db().from("players").select("username, strategy");
+      if (error) throw new Error(error.message);
+      return (data || []).map(normalizePlayer).filter(Boolean);
     }
     const store = readLocal();
     const players = Object.entries(store).map(([username, strategy]) => ({ username, strategy }));
     return [...BOTS.map((b) => ({ ...b })), ...players];
   },
 
-  /* Return this user's saved strategy or null. */
+  /* Return this user's strategy or null. */
   async get(username) {
+    if (isLive()) {
+      const { data, error } = await db()
+        .from("players")
+        .select("username, strategy")
+        .ilike("username", username.trim())
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      const hit = normalizePlayer(data);
+      return hit ? hit.strategy : null;
+    }
     const players = await this.all();
     const hit = players.find((p) => sameName(p.username, username));
     return hit ? hit.strategy : null;
@@ -54,18 +75,15 @@ const Data = {
   /* Upsert this user's strategy. */
   async submit(username, strategy) {
     if (isLive()) {
-      // text/plain avoids a CORS preflight against Apps Script.
-      const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action: "submit", username, strategy }),
-      });
-      if (!res.ok) throw new Error(`save failed (${res.status})`);
-      // Apps Script answers POST with a 302 redirect; the body may be HTML.
-      // Only treat an explicit {error:...} JSON payload as a failure.
-      const text = await res.text();
-      let out = null; try { out = JSON.parse(text); } catch (_) { /* redirect html — ok */ }
-      if (out && out.error) throw new Error(out.error);
+      const name = String(username).trim();
+      if (!name) throw new Error("username required");
+      if (name.length > 24) throw new Error("username too long");
+      if (!parseStrategy(strategy)) throw new Error("invalid strategy");
+      const { error } = await db().from("players").upsert(
+        { username: name, strategy: strategy.join(",") },
+        { onConflict: "username" }
+      );
+      if (error) throw new Error(error.message);
       return;
     }
     const store = readLocal();

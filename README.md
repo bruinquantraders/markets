@@ -5,12 +5,12 @@ fields**; every submitted strategy plays every other one head-to-head (round-rob
 and the leaderboard ranks by total field points won.
 
 Static site (HTML/CSS/JS) deployed on GitHub Pages at **markets.bruinquant.com**,
-backed by a Google Sheet through a small Apps Script web app.
+backed by **Supabase** (Postgres + REST API).
 
 ## Stack
 
 - Vanilla HTML/CSS/JS, no build step. Dark black-and-white theme matching bruinquant.com.
-- Google Apps Script + Google Sheet as the datastore.
+- Supabase Postgres table `players` (`username`, `strategy` CSV, `updated_at`).
 
 ## Local preview
 
@@ -19,32 +19,44 @@ python3 -m http.server 8080
 # open http://localhost:8080
 ```
 
-With `CONFIG.APPS_SCRIPT_URL` empty the site runs in **local mode** (localStorage +
-built-in bot strategies) so you can play immediately. Set the URL for the shared board.
+With `assets/js/config.js` missing or empty the site runs in **local mode** (localStorage +
+built-in bot strategies). Copy `assets/js/config.example.js` → `config.js` and paste your
+Supabase publishable key for the shared leaderboard.
 
-## Backend setup (Google Apps Script)
+## Supabase setup
 
-1. Open the Sheet → **Extensions → Apps Script**.
-2. Replace `Code.gs` with [`backend/Code.gs`](backend/Code.gs). Save.
-3. **Deploy → New deployment → Web app**
-   - Execute as: **Me**
-   - Who has access: **Anyone**
-4. Copy the `/exec` URL and paste it into `assets/js/blotto.js` → `CONFIG.APPS_SCRIPT_URL`.
-5. Commit & push. The nav badge flips from `local` to `live`.
+1. Create a project at [supabase.com](https://supabase.com).
+2. Copy `.env.local.example` → `.env.local` and fill in URL, publishable key, and secret key.
+3. Apply the schema and migrate existing data:
 
-Re-deploy a **new version** in Apps Script whenever `Code.gs` changes.
+```bash
+npm install
+npm run setup
+```
 
-### Sheet schema
+`npm run setup` writes `assets/js/config.js` for the static site and imports any strategies
+still on the old Google Sheet. If the `players` table does not exist yet, either:
 
-Row 1 headers: `username | hash`. The `hash` column stores the strategy as a
-comma-separated string of 10 integers summing to 100
-(e.g. `10,10,10,10,10,10,10,10,10,10`). One row per username; resubmitting updates it.
+- Add `SUPABASE_DB_PASSWORD` (Dashboard → **Settings → Database**) to `.env.local` and re-run `npm run setup`, or
+- Paste `supabase/migrations/20250703000000_players.sql` into the Supabase **SQL editor** and run it, then `npm run setup` again.
+
+### Table schema
+
+| column     | type        | notes                                      |
+|------------|-------------|--------------------------------------------|
+| `username` | `text` PK   | 1–24 chars, one row per player             |
+| `strategy` | `text`      | 10 comma-separated ints summing to 100     |
+| `updated_at` | `timestamptz` | auto-updated on upsert                  |
+
+Row Level Security allows public read/insert/update (username-only auth, same as the old sheet).
 
 ## Deployment (GitHub Pages)
 
 Pushing to `main` triggers `.github/workflows/deploy.yml`. In the repo:
 **Settings → Pages → Source = GitHub Actions**, and
 **Settings → Actions → General → Workflow permissions = Read and write**.
+
+Commit `assets/js/config.js` with your **publishable** key (safe for client-side use). Never commit `.env.local` or the secret key.
 
 ### Custom domain
 
