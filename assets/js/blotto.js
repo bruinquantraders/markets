@@ -34,7 +34,7 @@ const Data = {
   /* Return array of { username, strategy:[...] } for all players. */
   async all() {
     if (isLive()) {
-      const res = await fetch(`${CONFIG.APPS_SCRIPT_URL}?action=all&t=${Date.now()}`);
+      const res = await fetch(CONFIG.APPS_SCRIPT_URL);
       if (!res.ok) throw new Error(`read failed (${res.status})`);
       const data = await res.json();
       return (data.players || []).map(normalizePlayer).filter(Boolean);
