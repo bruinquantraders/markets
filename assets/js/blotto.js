@@ -61,7 +61,10 @@ const Data = {
         body: JSON.stringify({ action: "submit", username, strategy }),
       });
       if (!res.ok) throw new Error(`save failed (${res.status})`);
-      const out = await res.json();
+      // Apps Script answers POST with a 302 redirect; the body may be HTML.
+      // Only treat an explicit {error:...} JSON payload as a failure.
+      const text = await res.text();
+      let out = null; try { out = JSON.parse(text); } catch (_) { /* redirect html — ok */ }
       if (out && out.error) throw new Error(out.error);
       return;
     }
