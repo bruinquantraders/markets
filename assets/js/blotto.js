@@ -289,6 +289,8 @@ $("btnSubmit").addEventListener("click", async () => {
 $("btnEdit").addEventListener("click", () => { renderFields(); show("game"); });
 $("btnRefresh").addEventListener("click", async () => { await renderResults(); });
 
+let lastStandings = [];
+
 async function renderResults() {
   const note = $("resultsNote");
   note.textContent = "Loading standings…";
@@ -297,27 +299,28 @@ async function renderResults() {
   catch (err) { note.textContent = `Couldn't load standings: ${err.message}`; return; }
 
   const standings = computeStandings(players);
+  lastStandings = standings;
   const you = standings.find((r) => sameName(r.username, state.username));
 
-  // your card
+  // your deployment (always visible in results, no edit needed)
   const yc = $("yourcard");
   if (you) {
-    const max = Math.max(...you.strategy, 1);
-    const bars = you.strategy
-      .map((v) => `<div class="yourcard__bar" style="height:${Math.max(6, (v / max) * 46)}px" title="${v}"></div>`)
-      .join("");
     yc.innerHTML = `
-      <div class="yourcard__rank">#${you.rank}<small> / ${standings.length}</small></div>
-      <div class="yourcard__meta">
-        <span class="yourcard__name">${escapeHtml(you.username)}</span>
-        <span class="yourcard__sub">score ${you.score} · avg ${you.avg}/10 · ${you.wins}W-${you.losses}L-${you.draws}D</span>
+      <div class="yourcard__top">
+        <div class="yourcard__rank">#${you.rank}<small> / ${standings.length}</small></div>
+        <div class="yourcard__meta">
+          <span class="yourcard__name">${escapeHtml(you.username)} <span class="yourcard__tagme">you</span></span>
+          <span class="yourcard__sub">score ${you.score} · avg ${you.avg}/10 · ${you.wins}W-${you.losses}L-${you.draws}D</span>
+        </div>
+        <button class="btn btn--ghost btn--sm yourcard__edit" type="button" id="btnEditInline">Edit deployment</button>
       </div>
-      <div class="yourcard__alloc">${bars}</div>`;
+      <div class="breakdown">${breakdownBars(you.strategy)}</div>`;
+    $("btnEditInline").addEventListener("click", () => { renderFields(); show("game"); });
   } else { yc.innerHTML = ""; }
 
-  // table
+  // table (rows clickable for a breakdown)
   const rowsHtml = standings.map((r) => `
-    <tr class="${sameName(r.username, state.username) ? "is-you" : ""}">
+    <tr class="board__row ${sameName(r.username, state.username) ? "is-you" : ""}" data-user="${escapeHtml(r.username)}" tabindex="0" role="button" aria-label="View ${escapeHtml(r.username)}'s strategy">
       <td class="board__rank">${r.rank}</td>
       <td class="board__name">${escapeHtml(r.username)}</td>
       <td class="num">${r.score}</td>
@@ -330,12 +333,67 @@ async function renderResults() {
       <th class="num">Score</th><th class="num">Avg/10</th><th class="num">W-L-D</th>
     </tr></thead>
     <tbody>${rowsHtml}</tbody>`;
+  $("board").querySelectorAll(".board__row").forEach((tr) => {
+    const open = () => openDetail(tr.dataset.user);
+    tr.addEventListener("click", open);
+    tr.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
+  });
 
   const nBots = isLive() ? 0 : BOTS.length;
-  note.textContent = isLive()
-    ? `${standings.length} strategies · round-robin · updates as more players submit.`
-    : `Local mode: ${standings.length - nBots} of you + ${nBots} bots. Configure APPS_SCRIPT_URL for a shared board.`;
+  note.textContent = (isLive()
+    ? `${standings.length} strategies · round-robin`
+    : `Local mode: ${standings.length - nBots} of you + ${nBots} bots`) + " · tap any player to see their deployment.";
 }
+
+/* Read-only field bars with troop numbers (used in your-card and modal). */
+function breakdownBars(strategy) {
+  const max = Math.max(...strategy, 1);
+  return strategy.map((v, i) => `
+    <div class="bd">
+      <div class="bd__track"><div class="bd__fill" style="height:${Math.max(3, (v / max) * 100)}%"></div></div>
+      <div class="bd__val">${v}</div>
+      <div class="bd__idx">${i + 1}</div>
+    </div>`).join("");
+}
+
+/* ---------- player detail modal ---------- */
+function openDetail(username) {
+  const r = lastStandings.find((s) => sameName(s.username, username));
+  if (!r) return;
+  const isYou = sameName(username, state.username);
+  const me = lastStandings.find((s) => sameName(s.username, state.username));
+
+  // head-to-head vs you
+  let h2h = "";
+  if (me && !isYou) {
+    const yourFP = matchup(me.strategy, r.strategy);
+    const theirFP = CONFIG.SLOTS - yourFP;
+    const verdict = yourFP > theirFP ? "you win" : yourFP < theirFP ? "you lose" : "draw";
+    h2h = `
+      <div class="detail__h2h">
+        <span class="detail__h2hlabel">Head-to-head vs you</span>
+        <span class="detail__h2hscore">${yourFP} &ndash; ${theirFP} <em>(${verdict})</em></span>
+      </div>`;
+  }
+
+  $("detailBody").innerHTML = `
+    <button class="modal__close" data-close aria-label="Close">&times;</button>
+    <div class="detail__head">
+      <div class="detail__rank">#${r.rank}</div>
+      <div>
+        <div class="detail__name">${escapeHtml(r.username)}${isYou ? ' <span class="yourcard__tagme">you</span>' : ""}</div>
+        <div class="detail__sub">score ${r.score} · avg ${r.avg}/10 · ${r.wins}W-${r.losses}L-${r.draws}D</div>
+      </div>
+    </div>
+    ${h2h}
+    <div class="detail__grid">${breakdownBars(r.strategy)}</div>
+    <p class="detail__foot">Troops per field (1&ndash;10) &middot; total ${r.strategy.reduce((a, b) => a + b, 0)}</p>`;
+  $("detailBody").querySelectorAll("[data-close]").forEach((el) => el.addEventListener("click", closeDetail));
+  $("detail").classList.remove("is-hidden");
+}
+function closeDetail() { $("detail").classList.add("is-hidden"); }
+$("detail").querySelector(".modal__backdrop").addEventListener("click", closeDetail);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDetail(); });
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
