@@ -6,7 +6,7 @@
    Leave it as "" to run fully local (with a few bot strategies).
    ============================================================ */
 const CONFIG = {
-  APPS_SCRIPT_URL: "", // e.g. "https://script.google.com/macros/s/AKfycb.../exec"
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyYzG1IdB6PAGm6H_3o_XxO1zh8vcnT4iTG_dsGLDU86G_map5yWe4svV9dqNztNjMdeA/exec",
   SLOTS: 10,
   TROOPS: 100,
 };
