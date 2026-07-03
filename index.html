@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BQT Markets — Colonel Blotto</title>
+  <meta name="description" content="Colonel Blotto strategy game by Bruin Quant Traders. Allocate 100 troops across 10 fields and climb the leaderboard." />
+  <meta name="theme-color" content="#000000" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav__inner">
+      <a href="https://bruinquant.com" class="brand" aria-label="Bruin Quant Traders home">
+        <span class="brand__mark">BQT</span>
+        <span class="brand__text">Markets</span>
+      </a>
+      <div class="nav__right">
+        <span class="nav__mode" id="modeBadge" title="Data source">local</span>
+        <a href="https://bruinquant.com" class="nav__link">bruinquant.com&nbsp;&#8599;</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container main">
+    <!-- ENTRY -->
+    <section class="screen" id="screenEntry">
+      <span class="tag">Colonel Blotto</span>
+      <h1 class="title">Deploy <span class="grad">100 troops</span> across 10 fields.</h1>
+      <p class="lead">
+        Win a field by sending more troops than your opponent. You play every other
+        strategy head-to-head; your rank is the total ground you take across the board.
+        Enter a username to start &mdash; return anytime to refine your deployment.
+      </p>
+
+      <form class="entry" id="entryForm" autocomplete="off">
+        <input class="input" id="usernameInput" name="username" type="text"
+               placeholder="username" maxlength="24" required aria-label="Username" />
+        <button class="btn btn--primary" type="submit" id="enterBtn">Enter</button>
+      </form>
+      <p class="entry__hint" id="entryHint">No password &mdash; your username loads your saved deployment.</p>
+
+      <details class="rules">
+        <summary>How scoring works</summary>
+        <ul>
+          <li>Allocate exactly <strong>100 troops</strong> over <strong>10 fields</strong> (0&ndash;100 each).</li>
+          <li>Against each opponent, you win a field if you place <em>strictly more</em> troops there; a tie splits it (0.5 each).</li>
+          <li>You face <strong>every</strong> submitted strategy once (round-robin). Your <strong>score</strong> is total field points won; ranking is by score.</li>
+          <li>Resubmitting overwrites your previous deployment.</li>
+        </ul>
+      </details>
+    </section>
+
+    <!-- GAME -->
+    <section class="screen is-hidden" id="screenGame">
+      <div class="screen__head">
+        <div>
+          <span class="tag">Deployment</span>
+          <h2 class="title title--sm">Playing as <span class="grad" id="whoami">—</span></h2>
+        </div>
+        <div class="counter" id="counter">
+          <span class="counter__num" id="remaining">100</span>
+          <span class="counter__label">troops left</span>
+        </div>
+      </div>
+
+      <div class="fields" id="fields"><!-- injected --></div>
+
+      <div class="game__actions">
+        <div class="game__tools">
+          <button class="btn btn--ghost btn--sm" type="button" id="btnEven">Even split</button>
+          <button class="btn btn--ghost btn--sm" type="button" id="btnRandom">Randomize</button>
+          <button class="btn btn--ghost btn--sm" type="button" id="btnClear">Clear</button>
+        </div>
+        <button class="btn btn--primary" type="button" id="btnSubmit" disabled>Submit deployment</button>
+      </div>
+      <p class="game__msg" id="gameMsg"></p>
+    </section>
+
+    <!-- RESULTS -->
+    <section class="screen is-hidden" id="screenResults">
+      <div class="screen__head">
+        <div>
+          <span class="tag">Leaderboard</span>
+          <h2 class="title title--sm">Round-robin standings</h2>
+        </div>
+        <div class="results__actions">
+          <button class="btn btn--ghost btn--sm" type="button" id="btnEdit">Edit strategy</button>
+          <button class="btn btn--ghost btn--sm" type="button" id="btnRefresh">Refresh</button>
+        </div>
+      </div>
+      <div class="yourcard" id="yourcard"><!-- injected --></div>
+      <div class="table-wrap">
+        <table class="board" id="board"><!-- injected --></table>
+      </div>
+      <p class="results__note" id="resultsNote"></p>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="container">
+      <p>Bruin Quant Traders &middot; Markets &middot; a strategy sandbox for club members.</p>
+    </div>
+  </footer>
+
+  <script src="assets/js/blotto.js"></script>
+</body>
+</html>
