@@ -1,4 +1,4 @@
--- Colonel Blotto player strategies
+-- Weighted Blotto player strategies
 create table if not exists public.players (
   username text primary key check (char_length(username) between 1 and 24),
   strategy text not null,

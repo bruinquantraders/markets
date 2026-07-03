@@ -1,8 +1,9 @@
-# BQT Markets — Colonel Blotto
+# BQT Markets — Weighted Blotto
 
 A strategy sandbox for Bruin Quant Traders. Players allocate **100 troops across 10
-fields**; every submitted strategy plays every other one head-to-head (round-robin),
-and the leaderboard ranks by total field points won.
+fields**; field **k** is worth **k points** (1 through 10). Every submitted strategy
+plays every other one head-to-head (round-robin), and the leaderboard ranks by total
+weighted points won.
 
 Static site (HTML/CSS/JS) deployed on GitHub Pages at **markets.bruinquant.com**,
 backed by **Supabase** (Postgres + REST API).
@@ -70,7 +71,7 @@ Set it to **DNS only** (grey cloud in Cloudflare) so GitHub can issue HTTPS.
 
 ## Scoring
 
-For each pair of strategies, you win a field by placing **strictly more** troops than
-your opponent (a tie splits the field, 0.5 each). Your **score** is the sum of field
-points across all opponents; **avg/10** is per opponent; **W-L-D** is your match record
-(a match is won by taking more than half the fields).
+For each pair of strategies, field **k** is worth **k points**. You win a field by placing
+**strictly more** troops than your opponent (a tie splits the weight). Your **score** is
+the sum of weighted points across all opponents (max **55** per matchup); **avg/55** is
+per opponent; **W-L-D** is your match record (a match is won by outscoring your opponent).

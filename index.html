@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BQT Markets — Colonel Blotto</title>
-  <meta name="description" content="Colonel Blotto strategy game by Bruin Quant Traders. Allocate 100 troops across 10 fields and climb the leaderboard." />
+  <title>BQT Markets — Weighted Blotto</title>
+  <meta name="description" content="Weighted Blotto strategy game by Bruin Quant Traders. Allocate 100 troops across 10 weighted fields and climb the leaderboard." />
   <meta name="theme-color" content="#000000" />
   <link rel="icon" type="image/png" href="assets/img/favicon.png" />
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
@@ -30,11 +30,12 @@
   <main class="container main">
     <!-- ENTRY -->
     <section class="screen" id="screenEntry">
-      <span class="tag">Colonel Blotto</span>
+      <span class="tag">Weighted Blotto</span>
       <h1 class="title">Deploy <span class="grad">100 troops</span> across 10 fields.</h1>
       <p class="lead">
-        Win a field by sending more troops than your opponent. You play every other
-        strategy head-to-head; your rank is the total ground you take across the board.
+        Win a field by sending more troops than your opponent. Higher fields are worth
+        more &mdash; field 10 counts for 10 points, field 1 for 1. You play every other
+        strategy head-to-head; your rank is total weighted points across the board.
         Enter a username to start, and return anytime to refine your deployment.
       </p>
 
@@ -50,8 +51,8 @@
         <summary>How scoring works</summary>
         <ul>
           <li>Allocate exactly <strong>100 troops</strong> over <strong>10 fields</strong> (0&ndash;100 each).</li>
-          <li>Against each opponent, you win a field if you place <em>strictly more</em> troops there; a tie splits it (0.5 each).</li>
-          <li>You face <strong>every</strong> submitted strategy once (round-robin). Your <strong>score</strong> is total field points won; ranking is by score.</li>
+          <li>Field <strong>k</strong> is worth <strong>k points</strong> (field 10 = 10 pts, field 1 = 1 pt). Win it with strictly more troops; a tie splits the weight.</li>
+          <li>You face <strong>every</strong> submitted strategy once (round-robin). Your <strong>score</strong> is total weighted points won (max 55 per opponent); ranking is by score.</li>
           <li>Resubmitting overwrites your previous deployment.</li>
         </ul>
       </details>

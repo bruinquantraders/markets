@@ -1,5 +1,5 @@
 /* ============================================================
-   BQT Markets — Colonel Blotto
+   BQT Markets — Weighted Blotto
    ------------------------------------------------------------
    Supabase credentials live in assets/js/config.js (from .env.local).
    Leave config empty to run fully local (with a few bot strategies).
@@ -111,16 +111,20 @@ function readLocal() { try { return JSON.parse(localStorage.getItem(LS_KEY)) || 
 function writeLocal(o) { localStorage.setItem(LS_KEY, JSON.stringify(o)); }
 
 /* ============================================================
-   BLOTTO SCORING  (round-robin)
+   BLOTTO SCORING  (round-robin, field k worth k points)
    ============================================================ */
-/* One matchup: fields where a>b score 1 for a, ties split 0.5. */
+function fieldWeight(i) { return i + 1; }
+function maxMatchPoints() { return (CONFIG.SLOTS * (CONFIG.SLOTS + 1)) / 2; }
+
+/* One matchup: field i is worth (i+1) pts; ties split the weight. */
 function matchup(a, b) {
   let fa = 0;
   for (let i = 0; i < CONFIG.SLOTS; i++) {
-    if (a[i] > b[i]) fa += 1;
-    else if (a[i] === b[i]) fa += 0.5;
+    const w = fieldWeight(i);
+    if (a[i] > b[i]) fa += w;
+    else if (a[i] === b[i]) fa += w * 0.5;
   }
-  return fa; // opponent's field points = SLOTS - fa
+  return fa;
 }
 
 /* Full standings for a list of players. */
@@ -133,7 +137,7 @@ function computeStandings(players) {
     for (let j = 0; j < rows.length; j++) {
       if (i === j) continue;
       const fa = matchup(rows[i].strategy, rows[j].strategy);
-      const fb = CONFIG.SLOTS - fa;
+      const fb = maxMatchPoints() - fa;
       rows[i].score += fa;
       rows[i].opponents += 1;
       if (fa > fb) rows[i].wins += 1;
@@ -356,7 +360,7 @@ async function renderResults() {
         <div class="yourcard__rank">#${you.rank}<small> / ${standings.length}</small></div>
         <div class="yourcard__meta">
           <span class="yourcard__name">${escapeHtml(you.username)} <span class="yourcard__tagme">you</span></span>
-          <span class="yourcard__sub">score ${you.score} · avg ${you.avg}/10 · ${you.wins}W-${you.losses}L-${you.draws}D</span>
+          <span class="yourcard__sub">score ${you.score} · avg ${you.avg}/${maxMatchPoints()} · ${you.wins}W-${you.losses}L-${you.draws}D</span>
         </div>
         <button class="btn btn--ghost btn--sm yourcard__edit" type="button" id="btnEditInline">Edit deployment</button>
       </div>
@@ -376,7 +380,7 @@ async function renderResults() {
   $("board").innerHTML = `
     <thead><tr>
       <th class="num">#</th><th>Player</th>
-      <th class="num">Score</th><th class="num">Avg/10</th><th class="num">W-L-D</th>
+      <th class="num">Score</th><th class="num">Avg/${maxMatchPoints()}</th><th class="num">W-L-D</th>
     </tr></thead>
     <tbody>${rowsHtml}</tbody>`;
   $("board").querySelectorAll(".board__row").forEach((tr) => {
@@ -413,7 +417,7 @@ function openDetail(username) {
   let h2h = "";
   if (me && !isYou) {
     const yourFP = matchup(me.strategy, r.strategy);
-    const theirFP = CONFIG.SLOTS - yourFP;
+    const theirFP = maxMatchPoints() - yourFP;
     const verdict = yourFP > theirFP ? "you win" : yourFP < theirFP ? "you lose" : "draw";
     h2h = `
       <div class="detail__h2h">
@@ -428,7 +432,7 @@ function openDetail(username) {
       <div class="detail__rank">#${r.rank}</div>
       <div>
         <div class="detail__name">${escapeHtml(r.username)}${isYou ? ' <span class="yourcard__tagme">you</span>' : ""}</div>
-        <div class="detail__sub">score ${r.score} · avg ${r.avg}/10 · ${r.wins}W-${r.losses}L-${r.draws}D</div>
+        <div class="detail__sub">score ${r.score} · avg ${r.avg}/${maxMatchPoints()} · ${r.wins}W-${r.losses}L-${r.draws}D</div>
       </div>
     </div>
     ${h2h}
