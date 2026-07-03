@@ -7,6 +7,8 @@
 const CONFIG = {
   SLOTS: 10,
   TROOPS: 100,
+  TROOPS_PER_BEAR: 10,
+  BEAR_IMG: "assets/img/bear.png",
 };
 
 /* ---------- constants ---------- */
@@ -230,12 +232,27 @@ function bump(i, d) {
   updateCounter();
 }
 
+function renderTroopBears(n) {
+  if (n <= 0) return "";
+  const per = CONFIG.TROOPS_PER_BEAR;
+  const full = Math.floor(n / per);
+  const rem = n % per;
+  const parts = [];
+  for (let i = 0; i < full; i++) {
+    parts.push(`<div class="bear bear--full"><img src="${CONFIG.BEAR_IMG}" alt="" draggable="false" /></div>`);
+  }
+  if (rem > 0) {
+    const frac = rem / per;
+    parts.push(`<div class="bear bear--partial" style="--bear-frac:${frac}"><img src="${CONFIG.BEAR_IMG}" alt="" draggable="false" /></div>`);
+  }
+  return parts.join("");
+}
+
 function renderStack(i) {
   const el = $(`stack-${i}`);
   if (!el) return;
-  const n = state.alloc[i];
-  el.innerHTML = new Array(n).fill('<span class="dot"></span>').join("");
-  el.dataset.count = n;
+  el.innerHTML = renderTroopBears(state.alloc[i]);
+  el.dataset.count = state.alloc[i];
 }
 
 function syncField(i) {
