@@ -107,21 +107,46 @@ a { color: inherit; text-decoration: none; }
 .counter.is-zero .counter__num { color: #fff; }
 
 /* ============ Fields ============ */
-.fields { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.fields {
+  display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px;
+  align-items: end; overflow-x: auto; padding-bottom: 6px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 18px 16px 14px;
+}
 .field {
-  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
-  padding: 14px 16px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px;
-  transition: border-color 0.15s ease;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  min-width: 62px;
 }
-.field:focus-within { border-color: var(--line-strong); }
-.field__label { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
-.field__slider { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--surface-2); outline: none; }
-.field__slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #fff; cursor: pointer; border: 0; }
-.field__slider::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #fff; cursor: pointer; border: 0; }
+/* soldier circles — grow upward from the number */
+.field__stack {
+  display: flex; flex-wrap: wrap; align-content: flex-end;
+  justify-content: center; gap: 2px; width: 100%; min-height: 150px;
+  padding: 0 2px;
+}
+.dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: #fff; opacity: 0.9; flex: 0 0 auto;
+}
+.field__index {
+  font-family: var(--display); font-weight: 700; font-size: 1.05rem;
+  width: 30px; height: 30px; display: grid; place-items: center;
+  border-radius: 8px; background: var(--surface-2); color: var(--ink);
+}
+.field__stepper { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 100%; }
+.step {
+  width: 26px; height: 26px; border-radius: 7px; cursor: pointer;
+  background: var(--surface-2); border: 1px solid var(--line); color: var(--ink);
+  font-size: 1.05rem; line-height: 1; display: grid; place-items: center;
+  transition: background 0.14s ease, opacity 0.14s ease;
+}
+.step:hover:not(:disabled) { background: rgba(255,255,255,0.14); }
+.step:disabled { opacity: 0.3; cursor: not-allowed; }
 .field__num {
-  width: 62px; background: var(--paper); border: 1px solid var(--line); color: var(--ink);
-  border-radius: 8px; padding: 8px; text-align: center; font-family: var(--mono); font-size: 0.95rem;
+  width: 100%; max-width: 52px; background: var(--paper); border: 1px solid var(--line); color: var(--ink);
+  border-radius: 7px; padding: 6px 2px; text-align: center; font-family: var(--mono); font-size: 0.9rem;
+  -moz-appearance: textfield;
 }
+.field__num::-webkit-outer-spin-button, .field__num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .field__num:focus { outline: none; border-color: var(--line-strong); }
 
 .game__actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 22px; flex-wrap: wrap; }

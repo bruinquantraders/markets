@@ -169,40 +169,74 @@ function renderFields() {
   const wrap = $("fields");
   wrap.innerHTML = "";
   for (let i = 0; i < CONFIG.SLOTS; i++) {
-    const row = document.createElement("div");
-    row.className = "field";
-    row.innerHTML = `
-      <span class="field__label">Field ${String(i + 1).padStart(2, "0")}</span>
-      <input class="field__slider" type="range" min="0" max="100" value="${state.alloc[i]}" data-i="${i}" aria-label="Field ${i + 1} slider" />
-      <input class="field__num" type="number" min="0" max="100" value="${state.alloc[i]}" data-i="${i}" aria-label="Field ${i + 1} troops" />`;
-    wrap.appendChild(row);
+    const col = document.createElement("div");
+    col.className = "field";
+    col.innerHTML = `
+      <div class="field__stack" id="stack-${i}" aria-hidden="true"></div>
+      <div class="field__index">${i + 1}</div>
+      <div class="field__stepper">
+        <button class="step" type="button" data-i="${i}" data-d="-1" aria-label="Remove a troop from field ${i + 1}">&minus;</button>
+        <input class="field__num" type="number" min="0" max="100" value="${state.alloc[i]}" data-i="${i}" aria-label="Field ${i + 1} troops" />
+        <button class="step" type="button" data-i="${i}" data-d="1" aria-label="Add a troop to field ${i + 1}">+</button>
+      </div>`;
+    wrap.appendChild(col);
+    renderStack(i);
   }
-  wrap.querySelectorAll("input").forEach((el) => {
+  wrap.querySelectorAll(".step").forEach((btn) => {
+    btn.addEventListener("click", () => bump(+btn.dataset.i, +btn.dataset.d));
+  });
+  wrap.querySelectorAll(".field__num").forEach((el) => {
     el.addEventListener("input", (e) => {
       const i = +e.target.dataset.i;
       let v = parseInt(e.target.value, 10);
       if (!Number.isFinite(v)) v = 0;
-      v = Math.max(0, Math.min(100, v));
+      const cap = state.alloc[i] + remainingTroops(); // never let total exceed 100
+      v = Math.max(0, Math.min(cap, v));
       state.alloc[i] = v;
-      syncField(i);
+      renderStack(i);
       updateCounter();
     });
+    el.addEventListener("blur", (e) => { e.target.value = state.alloc[+e.target.dataset.i]; });
   });
   updateCounter();
 }
+
+function bump(i, d) {
+  if (d > 0 && remainingTroops() <= 0) return;
+  const next = Math.max(0, Math.min(100, state.alloc[i] + d));
+  state.alloc[i] = next;
+  syncField(i);
+  updateCounter();
+}
+
+function renderStack(i) {
+  const el = $(`stack-${i}`);
+  if (!el) return;
+  const n = state.alloc[i];
+  el.innerHTML = new Array(n).fill('<span class="dot"></span>').join("");
+  el.dataset.count = n;
+}
+
 function syncField(i) {
-  document.querySelectorAll(`[data-i="${i}"]`).forEach((el) => { el.value = state.alloc[i]; });
+  const input = document.querySelector(`.field__num[data-i="${i}"]`);
+  if (input) input.value = state.alloc[i];
+  renderStack(i);
 }
 function sum() { return state.alloc.reduce((a, b) => a + b, 0); }
+function remainingTroops() { return CONFIG.TROOPS - sum(); }
 
 function updateCounter() {
-  const remaining = CONFIG.TROOPS - sum();
+  const remaining = remainingTroops();
   const c = $("counter");
   $("remaining").textContent = remaining;
   c.classList.toggle("is-over", remaining < 0);
   c.classList.toggle("is-zero", remaining === 0);
-  const ok = remaining === 0;
-  $("btnSubmit").disabled = !ok;
+  $("btnSubmit").disabled = remaining !== 0;
+  // disable + when nothing left, − when field is empty
+  document.querySelectorAll(".step").forEach((btn) => {
+    const i = +btn.dataset.i, d = +btn.dataset.d;
+    btn.disabled = d > 0 ? remaining <= 0 : state.alloc[i] <= 0;
+  });
   if (remaining < 0) setMsg(`Over by ${-remaining} — pull some troops back.`, "error");
   else if (remaining > 0) setMsg(`${remaining} troops still in reserve.`);
   else setMsg("All 100 deployed. Ready to submit.", "ok");
