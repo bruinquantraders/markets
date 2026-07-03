@@ -286,7 +286,17 @@ $("btnSubmit").addEventListener("click", async () => {
 });
 
 /* ---------- results ---------- */
-$("btnEdit").addEventListener("click", () => { renderFields(); show("game"); });
+$("btnViewBoard").addEventListener("click", async () => {
+  const btn = $("btnViewBoard");
+  btn.disabled = true; const label = btn.innerHTML; btn.textContent = "Loading…";
+  await renderResults();
+  show("results");
+  btn.disabled = false; btn.innerHTML = label;
+});
+$("btnEdit").addEventListener("click", () => {
+  if (!state.username) { show("entry"); return; }
+  renderFields(); show("game");
+});
 $("btnRefresh").addEventListener("click", async () => { await renderResults(); });
 
 let lastStandings = [];
@@ -300,7 +310,8 @@ async function renderResults() {
 
   const standings = computeStandings(players);
   lastStandings = standings;
-  const you = standings.find((r) => sameName(r.username, state.username));
+  const you = state.username ? standings.find((r) => sameName(r.username, state.username)) : null;
+  $("btnEdit").textContent = state.username ? "Edit strategy" : "Enter to play";
 
   // your deployment (always visible in results, no edit needed)
   const yc = $("yourcard");
