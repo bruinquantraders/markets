@@ -175,9 +175,9 @@ function renderFields() {
       <div class="field__stack" id="stack-${i}" aria-hidden="true"></div>
       <div class="field__index">${i + 1}</div>
       <div class="field__stepper">
-        <button class="step" type="button" data-i="${i}" data-d="-1" aria-label="Remove a troop from field ${i + 1}">&minus;</button>
-        <input class="field__num" type="number" min="0" max="100" value="${state.alloc[i]}" data-i="${i}" aria-label="Field ${i + 1} troops" />
         <button class="step" type="button" data-i="${i}" data-d="1" aria-label="Add a troop to field ${i + 1}">+</button>
+        <input class="field__num" type="number" min="0" max="100" value="${state.alloc[i]}" data-i="${i}" aria-label="Field ${i + 1} troops" />
+        <button class="step" type="button" data-i="${i}" data-d="-1" aria-label="Remove a troop from field ${i + 1}">&minus;</button>
       </div>`;
     wrap.appendChild(col);
     renderStack(i);
